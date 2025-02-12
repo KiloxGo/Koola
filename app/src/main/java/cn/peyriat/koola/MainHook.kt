@@ -8,10 +8,9 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
-
 class MainHook : IXposedHookLoadPackage {
-    var stubbedClassLoader: ClassLoader? = null
-    var context: Context? = null
+    lateinit var stubbedClassLoader: ClassLoader
+    lateinit var context: Context
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         if (lpparam.packageName.contains("com.netease.x19")) {
             XposedHelpers.findAndHookMethod(
@@ -23,20 +22,19 @@ class MainHook : IXposedHookLoadPackage {
                     @Throws(Throwable::class)
                     override fun afterHookedMethod(param: MethodHookParam) {
                         context = param.args[0] as Context
-                        stubbedClassLoader = context!!.classLoader
+                        stubbedClassLoader = context.classLoader
                         XposedBridge.log("Koola: StubApp attached")
-                        hookLoadlibrary()
+                        hookLoadLibrary()
                     }
                 }
             )
 
-
-        }else{
+        } else {
             XposedBridge.log("Koola: ${lpparam.packageName} not matched")
         }
     }
 
-    private fun hookLoadlibrary() {
+    private fun hookLoadLibrary() {
         XposedHelpers.findAndHookMethod(
             "com.mojang.minecraftpe.MainActivity",
             stubbedClassLoader,
@@ -56,14 +54,16 @@ class MainHook : IXposedHookLoadPackage {
     }
 
     private fun loadKoola() {
-        try {
-            KoolaNative.setCustomUserDataPath(context!!.filesDir.absolutePath+"/koola/games/com.netease")
+        runCatching {
+            KoolaNative.setCustomUserDataPath("${context.filesDir.absolutePath}/koola/games/com.netease")
             Toast.makeText(context, "Koola loaded", Toast.LENGTH_SHORT).show()
-        } catch (e: Error) {
-            XposedBridge.log(e)
+        }.onFailure { exception ->
+            XposedBridge.log(exception)
         }
     }
+
     object KoolaNative {
+
         init {
             System.loadLibrary("koola")
         }

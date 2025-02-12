@@ -1,6 +1,6 @@
 #include "koola.h"
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 
 static HookFunType hook_func = nullptr;
 
@@ -18,7 +18,7 @@ intptr_t fake() {
 // Set custom path function
 extern "C" JNIEXPORT void JNICALL
 Java_cn_peyriat_koola_MainHook_00024KoolaNative_setCustomUserDataPath(JNIEnv *env, jobject clazz, jstring path) {
-    const char *nativePath = env->GetStringUTFChars(path, 0);
+    const char *nativePath = env->GetStringUTFChars(path, nullptr);
     customUserDataPath = strdup(nativePath); // Use strdup to copy the string
     env->ReleaseStringUTFChars(path, nativePath);
 }
