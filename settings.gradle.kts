@@ -32,6 +32,7 @@ pluginManagement {
     }
 }
 
+
 rootProject.name = "Koola"
 include(":app")
  

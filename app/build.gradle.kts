@@ -16,12 +16,20 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("armeabi-v7a","arm64-v8a")
+        }
+
         externalNativeBuild {
             cmake {
                 cppFlags += ""
             }
         }
+
+
     }
+
+
 
     buildTypes {
         release {
@@ -37,6 +45,7 @@ android {
             excludes += "**"
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -46,6 +55,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        prefab = true
     }
     externalNativeBuild {
         cmake {
@@ -53,9 +63,16 @@ android {
             version = "3.22.1"
         }
     }
+    packagingOptions{
+        pickFirsts += listOf(
+            "**/libshadowhook.so",
+            "**/libshadowhook_nothing.so"
+        )
+    }
 }
 
 dependencies {
+    implementation(libs.shadowhook)
     compileOnly(libs.xposed.api)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
