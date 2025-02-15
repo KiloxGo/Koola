@@ -1,6 +1,7 @@
 package cn.peyriat.koola
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.widget.Toast
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -11,7 +12,8 @@ import com.bytedance.shadowhook.ShadowHook;
 
 class MainHook : IXposedHookLoadPackage {
     lateinit var stubbedClassLoader: ClassLoader
-    lateinit var context: Context
+    lateinit var stubbedContext: Context
+    var xposedClassLoader = MainHook::class.java.classLoader
     var loaded = false
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         if (lpparam.packageName.contains("com.netease.x19")) {
@@ -23,8 +25,8 @@ class MainHook : IXposedHookLoadPackage {
                 object : XC_MethodHook() {
                     @Throws(Throwable::class)
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        context = param.args[0] as Context
-                        stubbedClassLoader = context.classLoader
+                        stubbedContext = param.args[0] as Context
+                        stubbedClassLoader = stubbedContext.classLoader
                         XposedBridge.log("Koola: StubApp attached")
                         hookLoadLibrary()
                     }
@@ -47,13 +49,15 @@ class MainHook : IXposedHookLoadPackage {
                     XposedBridge.log("Koola: ${param.args[1]} loaded")
                     val libName = param.args[1] as String
                     if (libName == "minecraftpe") {
+                        NativeHook.init()
                         XposedBridge.log("Koola: MinecraftPE loaded")
-                        //loadKoola()
                     }
                 }
             }
         )
     }
+
+
 
 
 
