@@ -9,6 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
+
         applicationId = "cn.peyriat.koola"
         minSdk = 24
         targetSdk = 35

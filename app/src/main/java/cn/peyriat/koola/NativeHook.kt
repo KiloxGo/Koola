@@ -17,7 +17,7 @@ object NativeHook {
         )
         System.loadLibrary("koola")
     }
-    external fun hookNativeGetUserDataPath():Int
+    external fun hookNativeGetUserDataPath(packagename:String):Int
     @JvmStatic
     fun nativeLog(message: String) {
             XposedBridge.log("[koola] $message")

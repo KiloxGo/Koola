@@ -1,9 +1,11 @@
 #include "koola.h"
 #include <jni.h>
+#include "string"
 #include <shadowhook.h>
 
 static jclass nativeHookClass = nullptr;
 static jmethodID nativeLogMethod = nullptr;
+static jstring apppackagename = nullptr;
 
 void initJniEnv(JNIEnv* env) {
     if (nativeHookClass == nullptr) {
@@ -40,16 +42,20 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 static jstring my_nativeGetUserDataPath(JNIEnv* env, jobject thiz) {
     logToXposed(env, "Hook triggered!");
-    return env->NewStringUTF("/sdcard/Android/data/files/games/com.mojang");
+    const char* packageNameCStr = env->GetStringUTFChars(apppackagename, nullptr);
+    std::string path = "/storage/emulated/0/Android/data/" + std::string(packageNameCStr) + "/files/koola/games/com.netease";
+    env->ReleaseStringUTFChars(apppackagename, packageNameCStr);
+    return env->NewStringUTF(path.c_str());
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_cn_peyriat_koola_NativeHook_hookNativeGetUserDataPath(JNIEnv* env, jobject thiz) {
+Java_cn_peyriat_koola_NativeHook_hookNativeGetUserDataPath(JNIEnv* env, jobject thiz, jstring packagename) {
+    apppackagename = packagename;
     void* original;
     void* hook = shadowhook_hook_sym_name(
             "libminecraftpe.so",
             "Java_com_mojang_minecraftpe_MainActivity_nativeGetUserDataPath",
-            (void*)my_nativeGetUserDataPath,
+            (jstring *)my_nativeGetUserDataPath,
             &original
     );
     return (hook != nullptr) ? 0 : -1;
