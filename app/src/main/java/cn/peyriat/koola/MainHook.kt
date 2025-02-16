@@ -1,9 +1,9 @@
 package cn.peyriat.koola
 
 import android.content.Context
+import cn.peyriat.koola.util.LogUtils
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
@@ -11,16 +11,19 @@ class MainHook : IXposedHookLoadPackage {
     lateinit var stubbedClassLoader: ClassLoader
     lateinit var stubbedContext: Context
     lateinit var packagename:String
+    var loaded:Boolean = false
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val stubAppClass = XposedHelpers.findClassIfExists(
+        var stubclass = XposedHelpers.findClassIfExists(
             "com.netease.android.protect.StubApp",
             lpparam.classLoader
         )
-        if (stubAppClass != null) {
+        if (stubclass != null) {
             packagename = lpparam.packageName
-            XposedBridge.log("Koola: Detected StubApp in ${lpparam.packageName}")
+
+            //NativeHook.hookNativeGetUserDataPath(packagename)
+
             XposedHelpers.findAndHookMethod(
-                stubAppClass,
+                stubclass,
                 "attachBaseContext",
                 Context::class.java,
                 object : XC_MethodHook() {
@@ -28,17 +31,25 @@ class MainHook : IXposedHookLoadPackage {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         stubbedContext = param.args[0] as Context
                         stubbedClassLoader = stubbedContext.classLoader
-                        XposedBridge.log("Koola: StubApp attached in $packagename")
                         hookLoadLibrary()
                     }
                 }
             )
-        } else {
-            XposedBridge.log("Koola: ${lpparam.packageName} skipped (no StubApp)")
+
         }
     }
 
     private fun hookLoadLibrary() {
+        XposedHelpers.findAndHookMethod(
+            "com.mojang.minecraftpe.MainActivity",
+            stubbedClassLoader,
+            "nativeGetUserDataPath",
+            object : XC_MethodHook() {
+                @Throws(Throwable::class)
+                override fun afterHookedMethod(param: MethodHookParam) {
+                    LogUtils.javaLog("nativeGetUserDataPath ${param.result}")
+                }
+            })
         XposedHelpers.findAndHookMethod(
             Runtime::class.java,
             "loadLibrary0",
@@ -48,16 +59,12 @@ class MainHook : IXposedHookLoadPackage {
                 @Throws(Throwable::class)
                 override fun afterHookedMethod(param: MethodHookParam) {
                     val libName = param.args[1] as String
-                    if (libName == "minecraftpe") {
-                        if (NativeHook.hookNativeGetUserDataPath(packagename) == 0) {
-                            XposedBridge.log("Koola:  hooked")
-                        } else {
-                            XposedBridge.log("Koola:  failed")
-                        }
-                    }
+                    LogUtils.javaLog("loadLibrary0: $libName")
                 }
             }
         )
+
+
     }
 
 
