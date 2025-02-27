@@ -40,6 +40,7 @@ fun SettingsPage(context: Context) {
 
         SettingItem(
             label = "TestSettings1",
+            description = "TestDescription1",
             configName = "Test1",
             isChecked = test1,
             onCheckedChange = { test1 = it },
@@ -48,6 +49,7 @@ fun SettingsPage(context: Context) {
 
         SettingItem(
             label = "TestSettings2",
+            description = "TestDescription2",
             configName = "Test2",
             isChecked = test2,
             onCheckedChange = { test2 = it },
@@ -59,16 +61,26 @@ fun SettingsPage(context: Context) {
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun SettingItem(label: String, configName: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit, context: Context) {
+fun SettingItem(label: String, description: String, configName: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit, context: Context) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1F)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 1.dp)
+            )
+        }
+
         Switch(
             checked = isChecked,
             onCheckedChange = { state ->
