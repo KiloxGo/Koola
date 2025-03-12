@@ -1,19 +1,34 @@
 package cn.peyriat.koola.ui.pages
 
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cn.peyriat.koola.R
 
+@Preview
 @Composable
 fun DashboardPage() {
     val scrollState = rememberScrollState()
-
+    var isEnabled by remember { mutableStateOf(false) }
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
             "Home",
@@ -21,6 +36,7 @@ fun DashboardPage() {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -42,10 +58,156 @@ fun DashboardPage() {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "那我问你，你是男的女的？如果你是女的你说这样的话，啊，那我问你，你你你是女孩子，那我问你，那那你那头顶是不是不是尖的？那我那我问你，你头顶是尖的呢？还是秃顶的，啊，还是，啊，染黄色染红色的，那我问你，啊，还是戴假发的，如果是如果你是男的那我问你，啊，你说我的头是尖的，那我问你那你是不是秃头？那你是不是光头？啊？你是光头还是有头发的，啊？那我问你，我头顶，我我头尖怎么了？我就尖怎么了？哎，我就尖怎么了？我就头顶尖怎么了？哎，我头顶尖你难道你看不惯么？我头顶就是尖的怎么了？我就是尖，我就是要尖怎么了，啊，你看不惯吗，啊？",
+                    "To be continued",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                StatusCard(isEnabled = isEnabled)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        ModuleInfo()
+    }
+}
+
+@Composable
+fun StatusCard(isEnabled: Boolean) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isEnabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "Status",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (isEnabled) Icons.Default.Check else Icons.Default.Close,
+                    contentDescription = if (isEnabled) "已启用" else "未启用",
+                    tint = if (isEnabled) Color.Green else Color.Red,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isEnabled) "已启用" else "未启用",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ModuleInfo() {
+    val context = LocalContext.current
+    val packageName = context.packageName
+    val versionName = try {
+        val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
+        packageInfo.versionName
+    } catch (e: PackageManager.NameNotFoundException) {
+        "Unknown"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Package Name",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = "PackageName: $packageName",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Version: $versionName",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+            }
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val uri = Uri.parse("https://github.com/ShirokoLEET/Koola")
+                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                    context.startActivity(intent)
+                },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "GitHub",
+                    tint = Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "GitHub",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun StatusCardPreview() {
+    StatusCard(isEnabled = true )
 }
