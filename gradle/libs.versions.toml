@@ -10,6 +10,7 @@ composeBom = "2025.03.00"
 kspXposed = "<yuki-version>"
 lifecycleRuntimeKtx = "2.8.7"
 roomCommon = "2.6.1"
+cardview = "1.0.0"
 xposed = "82"
 shadowhook = "1.1.1"
 ksp = "2.1.0-1.0.29"
@@ -30,6 +31,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
+androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposed" }
 shadowhook = { module = "com.bytedance.android:shadowhook", version.ref = "shadowhook" }
 yukihook-api = { module = "com.highcapable.yukihookapi:api", version.ref = "yukihook" }

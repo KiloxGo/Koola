@@ -76,13 +76,12 @@ android {
 }
 
 dependencies {
-
     implementation(libs.yukihook.api)
     ksp(libs.yukihook.ksp.xposed)
     compileOnly(libs.xposed.api)
+    implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.common)
     implementation(libs.shadowhook)
-    implementation(libs.androidx.room.common)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
