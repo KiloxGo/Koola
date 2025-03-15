@@ -1,7 +1,11 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.dev.tools.ksp)
+
 }
 
 android {
@@ -42,8 +46,12 @@ android {
     }
     packaging {
         resources {
-            merges += "META-INF/xposed/*"
+            merges += "META-INF/yukihookapi_init"
             excludes += "**"
+        }
+        jniLibs {
+            "**/libshadowhook.so"
+            "**/libshadowhook_nothing.so"
         }
     }
 
@@ -55,6 +63,7 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
         prefab = true
     }
@@ -64,18 +73,16 @@ android {
             version = "3.22.1"
         }
     }
-    packagingOptions{
-        pickFirsts += listOf(
-            "**/libshadowhook.so",
-            "**/libshadowhook_nothing.so"
-        )
-    }
 }
 
 dependencies {
+
+    implementation(libs.yukihook.api)
+    ksp(libs.yukihook.ksp.xposed)
+    compileOnly(libs.xposed.api)
+    implementation(libs.androidx.room.common)
     implementation(libs.shadowhook)
     implementation(libs.androidx.room.common)
-    compileOnly(libs.xposed.api)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

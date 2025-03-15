@@ -27,22 +27,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.highcapable.yukihookapi.YukiHookAPI
 
 @Preview
 @Composable
 fun DashboardPage() {
     val scrollState = rememberScrollState()
-    var isEnabled by remember { mutableStateOf(false) }
+    val isEnabled = YukiHookAPI.Status.isXposedModuleActive or YukiHookAPI.Status.isTaiChiModuleActive
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Text(
             "Home",
@@ -75,10 +72,11 @@ fun DashboardPage() {
                     "To be continued",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                StatusCard(isEnabled = isEnabled)
+
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        StatusCard(isEnabled = isEnabled)
         ModuleInfo()
     }
 }
@@ -189,6 +187,7 @@ fun ModuleInfo() {
 
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
         Card(
             modifier = Modifier
                 .fillMaxWidth()

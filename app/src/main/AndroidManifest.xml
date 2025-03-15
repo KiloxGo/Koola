@@ -14,7 +14,8 @@
         android:theme="@style/Theme.Koola"
         tools:targetApi="31"
         android:multiArch="true"
-        android:extractNativeLibs="false">
+        android:extractNativeLibs="false"
+        android:name="com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication">
         <activity android:name="cn.peyriat.koola.ui.MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,14 +28,13 @@
             android:value="true"/>
         <meta-data
             android:name="xposeddescription"
-            android:value="我是Xposed模块简介" />
+            android:value="Halo" />
         <meta-data
             android:name="xposedminversion"
-            android:value="54"/>
+            android:value="93" />
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposedscope"/>
-        <!-- 因为使用了老版的api 只能在这里加元数据来适配-->
 
     </application>
 
