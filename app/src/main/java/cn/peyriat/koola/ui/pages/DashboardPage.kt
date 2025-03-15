@@ -37,10 +37,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,13 +47,21 @@ import cn.peyriat.koola.ui.service.FloatingWindowService
 import cn.peyriat.koola.ui.snackbar.SnackbarManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import com.highcapable.yukihookapi.YukiHookAPI
 
 @Preview
 @Composable
 fun DashboardPage() {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
-    var isEnabled by remember { mutableStateOf(false) }
+    val isEnabled = YukiHookAPI.Status.isXposedModuleActive or YukiHookAPI.Status.isTaiChiModuleActive
+     Column(modifier = Modifier.verticalScroll(scrollState)) {
+        Text(
+            "Home",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
 
     val overlayPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -85,7 +89,7 @@ fun DashboardPage() {
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-            ) {
+                 ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Icon(
                         Icons.Rounded.Home,
@@ -162,6 +166,9 @@ private fun startFloatingService(context: Context) {
         GlobalScope.launch {
             SnackbarManager.showSnackbar("悬浮窗已关闭")
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        StatusCard(isEnabled = isEnabled)
+        ModuleInfo()
     }
 }
 
@@ -271,6 +278,7 @@ fun ModuleInfo() {
 
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
         Card(
             modifier = Modifier
                 .fillMaxWidth()
