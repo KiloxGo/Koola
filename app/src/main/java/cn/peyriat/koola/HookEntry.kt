@@ -11,7 +11,6 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.type.android.BundleClass
 import com.highcapable.yukihookapi.hook.type.android.ContextClass
-import com.highcapable.yukihookapi.hook.type.java.AnyClass
 import com.highcapable.yukihookapi.hook.type.java.StringClass
 import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 
@@ -29,7 +28,7 @@ class HookEntry:IYukiHookXposedInit {
                     }.hook {
                         after {
                             loadHooker(ActivityHook)
-                            loadHooker(RNhook)
+                            //loadHooker(RNhook)
                             loadHooker(LibHook)
                         }
                     }
@@ -94,7 +93,6 @@ class HookEntry:IYukiHookXposedInit {
                 }.hook {
                     after {
                         val activity = instance as? Activity ?: return@after
-                        
                         val containerLayout = android.widget.LinearLayout(activity).apply {
                             orientation = android.widget.LinearLayout.VERTICAL
                             setBackgroundColor(android.graphics.Color.parseColor("#F0FFFFFF"))
