@@ -1,5 +1,7 @@
 package cn.peyriat.koola
 import android.app.Activity
+import android.view.ViewGroup
+import android.widget.TextView
 import cn.peyriat.koola.util.LogUtils
 import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
@@ -13,6 +15,7 @@ import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 
 @InjectYukiHookWithXposed
 class HookEntry:IYukiHookXposedInit {
+    private var floatingView: TextView? = null
     override fun onHook() {
         YukiHookAPI.encase {
             loadApp(true) {
@@ -68,7 +71,12 @@ class HookEntry:IYukiHookXposedInit {
                         if (args[1] as String != "minecraftpe") {
                             return@after
                         }
-                        NativeHook.starthook()
+                        if (NativeHook.getPlayer() == 0) {
+                            LogUtils.javaLog("hook success")
+                        } else {
+                            LogUtils.javaLog("hook failed")
+                        }
+
                     }
                 }
             }
@@ -89,6 +97,10 @@ class HookEntry:IYukiHookXposedInit {
                 }
             }
         }
+
     }
+
+
+
 }
 

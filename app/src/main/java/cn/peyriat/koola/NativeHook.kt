@@ -18,12 +18,8 @@ object NativeHook {
             )
             System.loadLibrary("koola")
         }
-    external fun starthook():Int
+    external fun getPlayer():Int
 
-    @JvmStatic
-    fun nativeLog(message: String) {
-        LogUtils.nativeLog(message)
-    }
 
 }
 
