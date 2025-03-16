@@ -55,26 +55,19 @@
         }
     }
 
-
-
-
     static jstring my_nativeGetUserDataPath(JNIEnv* env, jobject thiz) {
         const char* packageNameCStr = env->GetStringUTFChars(apppackagename, nullptr);
         std::string path = "/storage/emulated/0/Android/data/" + std::string(packageNameCStr) + "/files/koola/games/com.netease";
         env->ReleaseStringUTFChars(apppackagename, packageNameCStr);
         return env->NewStringUTF(path.c_str());
     }
+
+
     extern "C" JNIEXPORT jint JNICALL
     Java_cn_peyriat_koola_NativeHook_starthook(JNIEnv* env, jobject thiz){
         logToXposed(env, "Hooking started");
         return 0;
     }
-
-
-
-
-
-
 
 
 
