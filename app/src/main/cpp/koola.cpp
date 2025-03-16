@@ -43,6 +43,7 @@
         initJniEnv(env);
         return JNI_VERSION_1_6;
     }
+
     void my_nativeGetUserDataPath_hook_callback(int error_number, const char* lib_name, const char* sym_name,
                        void* sym_addr, void* new_addr, void* orig_addr, void* arg) {
         JNIEnv* env = (JNIEnv*) arg;
@@ -63,6 +64,19 @@
         env->ReleaseStringUTFChars(apppackagename, packageNameCStr);
         return env->NewStringUTF(path.c_str());
     }
+    extern "C" JNIEXPORT jint JNICALL
+    Java_cn_peyriat_koola_NativeHook_starthook(JNIEnv* env, jobject thiz){
+        logToXposed(env, "Hooking started");
+        return 0;
+    }
+
+
+
+
+
+
+
+
 
     extern "C" JNIEXPORT jint JNICALL
     Java_cn_peyriat_koola_NativeHook_hookNativeGetUserDataPath(JNIEnv* env, jobject thiz, jstring packagename) {

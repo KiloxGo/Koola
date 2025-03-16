@@ -8,10 +8,8 @@ import de.robv.android.xposed.XposedBridge
 
 //use object bcz @jvmstatic
 object NativeHook {
-    private var loaded = false
     init {
-        if (!loaded) {
-            ShadowHook.init(
+        ShadowHook.init(
                 ConfigBuilder()
                     .setMode(ShadowHook.Mode.UNIQUE)
                     .setDebuggable(true)
@@ -19,10 +17,8 @@ object NativeHook {
                     .build()
             )
             System.loadLibrary("koola")
-            loaded = true
         }
-    }
-    external fun hookNativeGetUserDataPath(packagename:String):Int
+    external fun starthook():Int
 
     @JvmStatic
     fun nativeLog(message: String) {

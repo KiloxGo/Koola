@@ -18,10 +18,6 @@
         android:multiArch="true"
         android:extractNativeLibs="false"
         android:name="com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication">
-        <service
-            android:name=".ui.service.FloatingWindowService"
-            android:enabled="true"
-            android:exported="false" />
         <activity android:name="cn.peyriat.koola.ui.MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

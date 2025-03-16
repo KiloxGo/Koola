@@ -11,6 +11,7 @@ plugins {
 android {
     namespace = "cn.peyriat.koola"
     compileSdk = 35
+    androidResources.additionalParameters += listOf("--allow-reserved-package-id", "--package-id", "0x65")
 
     defaultConfig {
 
