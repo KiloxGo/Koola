@@ -2,6 +2,10 @@
 #define KOOLA_KOOLA_H
 
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 class koola {
 
 
