@@ -1,6 +1,9 @@
 package cn.peyriat.koola
 import android.app.Activity
-import android.view.ViewGroup
+import android.os.Build
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
 import android.widget.TextView
 import cn.peyriat.koola.ui.CONFIG
 import cn.peyriat.koola.util.LogUtils
@@ -16,7 +19,11 @@ import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 
 @InjectYukiHookWithXposed
 class HookEntry:IYukiHookXposedInit {
-    private var floatingView: TextView? = null
+    companion object {
+        private var floatingView: View? = null
+        private var floatingViewParams: WindowManager.LayoutParams? = null
+    }
+
     override fun onHook() {
         YukiHookAPI.encase {
             loadApp(true) {
@@ -92,108 +99,158 @@ class HookEntry:IYukiHookXposedInit {
                     param(BundleClass)
                 }.hook {
                     after {
-                        val activity = instance as? Activity ?: return@after
-                        val containerLayout = android.widget.LinearLayout(activity).apply {
-                            orientation = android.widget.LinearLayout.VERTICAL
-                            setBackgroundColor(android.graphics.Color.parseColor("#F0FFFFFF"))
-                            setPadding(20, 10, 20, 10)
-                            alpha = 0.9f
-                        }
+                        LogUtils.javaLog("MainActivity onCreate hooked")
                         
-                        val titleText = TextView(activity).apply {
-                            text = "Koola 已启用"
-                            textSize = 16f
-                            setTextColor(android.graphics.Color.BLACK)
-                            setPadding(0, 0, 0, 10)
-                        }
-                        containerLayout.addView(titleText)
+                        val activity = instance as Activity
+                        val windowManager = activity.getSystemService(Activity.WINDOW_SERVICE) as WindowManager
                         
-                        val switch1Layout = createSwitchLayout(activity, "Item1", CONFIG.optBoolean("InGameSwitch1", false)) { isChecked ->
-                            LogUtils.javaLog("Item1: $isChecked")
-                            CONFIG.put("InGameSwitch1", isChecked)
-                            saveConfig(activity, CONFIG)
-                        }
-                        containerLayout.addView(switch1Layout)
-                        
-                        val switch2Layout = createSwitchLayout(activity, "Item2", CONFIG.optBoolean("InGameSwitch2", false)) { isChecked ->
-                            LogUtils.javaLog("Item2: $isChecked")
-                            CONFIG.put("InGameSwitch2", isChecked)
-                            saveConfig(activity, CONFIG)
-                        }
-                        containerLayout.addView(switch2Layout)
-                        
-                        val layoutParams = android.widget.FrameLayout.LayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                        ).apply {
-                            gravity = android.view.Gravity.TOP or android.view.Gravity.END
-                            setMargins(0, 100, 20, 0) 
-                        }
-                        
-                        val rootView = activity.window.decorView as ViewGroup
-                        rootView.addView(containerLayout, layoutParams)
-                        
-                        containerLayout.setOnTouchListener(object : android.view.View.OnTouchListener {
-                            private var initialX = 0
-                            private var initialY = 0
-                            private var initialTouchX = 0f
-                            private var initialTouchY = 0f
-                            
-                            override fun onTouch(v: android.view.View, event: android.view.MotionEvent): Boolean {
-                                when (event.action) {
-                                    android.view.MotionEvent.ACTION_DOWN -> {
-                                        initialX = layoutParams.leftMargin
-                                        initialY = layoutParams.topMargin
-                                        initialTouchX = event.rawX
-                                        initialTouchY = event.rawY
-                                        return true
-                                    }
-                                    android.view.MotionEvent.ACTION_MOVE -> {
-                                        layoutParams.leftMargin = initialX + (event.rawX - initialTouchX).toInt()
-                                        layoutParams.topMargin = initialY + (event.rawY - initialTouchY).toInt()
-                                        containerLayout.layoutParams = layoutParams
-                                        return true
-                                    }
-                                }
-                                return false
+                        if (floatingView == null) {
+                            val container = android.widget.LinearLayout(activity).apply {
+                                orientation = android.widget.LinearLayout.VERTICAL
+                                setPadding(25, 20, 25, 20) // 增大内边距
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                cornerRadius = 25f  // 增大圆角
+                                setColor(android.graphics.Color.parseColor("#F5FFFFFF"))  // 白底微透明
                             }
-                        })
+                            }
+
+                            val titleView = TextView(activity).apply {
+                                text = "Koola 控制面板"
+                                textSize = 18f
+                                setTextColor(android.graphics.Color.BLACK)
+                                gravity = android.view.Gravity.CENTER
+                                setPadding(0, 0, 0, 20)
+                            }
+                            container.addView(titleView)
+
+                            val switch1Container = android.widget.LinearLayout(activity).apply {
+                                orientation = android.widget.LinearLayout.HORIZONTAL
+                                layoutParams = android.widget.LinearLayout.LayoutParams(
+                                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    bottomMargin = 15
+                                }
+                            }
+                            
+                            val switch1Label = TextView(activity).apply {
+                                text = "功能1"
+                                textSize = 16f
+                                setTextColor(android.graphics.Color.BLACK)
+                                layoutParams = android.widget.LinearLayout.LayoutParams(
+                                    0,
+                                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    1f
+                                )
+                            }
+                            
+                            val switch1 = android.widget.Switch(activity).apply {
+                                isChecked = false
+                                setOnCheckedChangeListener { _, isChecked ->
+                                    LogUtils.javaLog("开关1状态: $isChecked")
+                                    // 在这里添加功能1的逻辑
+                                }
+                            }
+                            
+                            switch1Container.addView(switch1Label)
+                            switch1Container.addView(switch1)
+                            container.addView(switch1Container)
+
+                            val switch2Container = android.widget.LinearLayout(activity).apply {
+                                orientation = android.widget.LinearLayout.HORIZONTAL
+                                layoutParams = android.widget.LinearLayout.LayoutParams(
+                                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
+                            }
+                            
+                            val switch2Label = TextView(activity).apply {
+                                text = "功能2"
+                                textSize = 14f
+                                setTextColor(android.graphics.Color.BLACK)
+                                layoutParams = android.widget.LinearLayout.LayoutParams(
+                                    0,
+                                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    1f
+                                )
+                            }
+                            
+                            val switch2 = android.widget.Switch(activity).apply {
+                                isChecked = false
+                                setOnCheckedChangeListener { _, isChecked ->
+                                    LogUtils.javaLog("开关2状态: $isChecked")
+                                    // 在这里添加功能2的逻辑
+                                }
+                            }
+                            
+                            switch2Container.addView(switch2Label)
+                            switch2Container.addView(switch2)
+                            container.addView(switch2Container)
+
+                            floatingView = container
+
+                            floatingViewParams = WindowManager.LayoutParams().apply {
+                                type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    WindowManager.LayoutParams.TYPE_APPLICATION
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                    WindowManager.LayoutParams.TYPE_PHONE
+                                } else {
+                                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+                                }
+                                flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                                       WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                                width = WindowManager.LayoutParams.WRAP_CONTENT
+                                height = WindowManager.LayoutParams.WRAP_CONTENT
+                                x = 100
+                                y = 200
+                            }
+
+                            container.setOnTouchListener(object : View.OnTouchListener {
+                                private var initialX: Int = 0
+                                private var initialY: Int = 0
+                                private var initialTouchX: Float = 0f
+                                private var initialTouchY: Float = 0f
+
+                                override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                                    when (event.action) {
+                                        MotionEvent.ACTION_DOWN -> {
+                                            initialX = floatingViewParams!!.x
+                                            initialY = floatingViewParams!!.y
+                                            initialTouchX = event.rawX
+                                            initialTouchY = event.rawY
+                                            return true
+                                        }
+                                        MotionEvent.ACTION_MOVE -> {
+                                            floatingViewParams!!.x = initialX + (event.rawX - initialTouchX).toInt()
+                                            floatingViewParams!!.y = initialY + (event.rawY - initialTouchY).toInt()
+                                            windowManager.updateViewLayout(floatingView, floatingViewParams)
+                                            return true
+                                        }
+                                        MotionEvent.ACTION_UP -> {
+                                            val isDrag = Math.abs(event.rawX - initialTouchX) > 10 || 
+                                                        Math.abs(event.rawY - initialTouchY) > 10
+                                            if (!isDrag) {
+                                                return false
+                                            }
+                                            return true
+                                        }
+                                    }
+                                    return false
+                                }
+                            })
+                            
+                            try {
+                                windowManager.addView(floatingView, floatingViewParams)
+                                LogUtils.javaLog("悬浮窗添加成功")
+                            } catch (e: Exception) {
+                                LogUtils.javaLog("悬浮窗添加失败: ${e.message}")
+                                e.printStackTrace()
+                            }
+                        }
                     }
                 }
             }
         }
-        
-        private fun createSwitchLayout(context: Activity, label: String, initialState: Boolean, onCheckedChange: (Boolean) -> Unit): android.widget.LinearLayout {
-            return android.widget.LinearLayout(context).apply {
-                orientation = android.widget.LinearLayout.HORIZONTAL
-                layoutParams = android.widget.LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 5
-                    bottomMargin = 5
-                }
-                
-                val textView = TextView(context).apply {
-                    text = label
-                    textSize = 14f
-                    setTextColor(android.graphics.Color.BLACK)
-                    layoutParams = android.widget.LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-                }
-                addView(textView)
-                
-                val switch = android.widget.Switch(context).apply {
-                    isChecked = initialState
-                    setOnCheckedChangeListener { _, isChecked -> onCheckedChange(isChecked) }
-                }
-                addView(switch)
-            }
-        }
     }
-
 }
 
