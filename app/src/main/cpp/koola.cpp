@@ -1,147 +1,123 @@
-    #include "koola.h"
-    #include <jni.h>
-    #include "string"
-    #include <shadowhook.h>
-    #include <android/log.h>
+#include <sstream>
+#include "koola.h"
+#include <cstdio>
+#include <cstring>
+#include <atomic>
+#include <thread>
 
+// ModuleInfo 实现
+bool ModuleInfo::createInfo(const char *libName) {
+    char buff[256];
+    FILE* fp;
 
-    class ModuleInfo {
-    public:
-        uint64_t head;
-        uint64_t end;
+    fp = fopen("/proc/self/maps", "r");
+    if (fp == nullptr) return false;
 
-        bool createInfo(const char* libName);
-    };
+    bool isFound = false;
+    bool flag = false;
 
-
-    bool ModuleInfo::createInfo(const char *libName) {
-        char buff[256];
-        FILE* fp;
-
-        fp = fopen("/proc/self/maps", "r");
-        if (fp == 0)  return false;
-
-        bool isFound = false;
-        bool flag = false;
-
-        while (!feof(fp))
-        {
-            fgets(buff, sizeof(buff), fp);
-            if (!feof(fp) && strstr(buff, "(deleted)") == 0 && strstr(buff, libName) != 0) {
-                uint64_t hAddr = 0;
-                uint64_t eAddr = 0;
-                sscanf(buff, "%lx-%lx", &hAddr, &eAddr);
-                if (hAddr != 0 && eAddr != 0)
-                {
-                    if (!flag)
-                    {
-                        head = hAddr;
-                        flag = true;
-                    }
-                    end = eAddr;
-                    isFound = true;
+    while (!feof(fp)) {
+        fgets(buff, sizeof(buff), fp);
+        if (!feof(fp) && strstr(buff, "(deleted)") == nullptr &&
+            strstr(buff, libName) != nullptr) {
+            uint64_t hAddr = 0;
+            uint64_t eAddr = 0;
+            char *endPtr;
+            hAddr = strtoul(buff, &endPtr, 16);
+            if (*endPtr == '-') {
+                eAddr = strtoul(endPtr + 1, nullptr, 16);
+            }
+            if (hAddr != 0 && eAddr != 0) {
+                if (!flag) {
+                    head = hAddr;
+                    flag = true;
                 }
+                end = eAddr;
+                isFound = true;
             }
         }
-        fclose(fp);
-        return isFound;
     }
+    fclose(fp);
+    return isFound;
+}
 
-    static ModuleInfo minecraftInfo;
+// Vector3f 实现
+Vector3f::Vector3f(float x, float y, float z) : x(x), y(y), z(z) {}
 
-    class Vector3f {
-    public:
-        float x;
-        float y;
-        float z;
+// 全局变量定义
+ModuleInfo minecraftInfo;
 
-        Vector3f(float x, float y, float z) : x(x), y(y), z(z) {}
-    };
+// 函数指针声明
+static void* (*origLocalPlayerOnTick)(void*, void*);
+static void* (*origPlayerOnTick)(void*, void*);
 
-    class StateVectorComp {
-    public:
-        Vector3f currentPos;
-        Vector3f eyePos;
-        Vector3f velocity;
-    };
+//Point Addr Define
+static uintptr_t localPlayerAddr;
 
-    class AABBShapeComp {
-    public:
-        Vector3f lowerPos;
-        Vector3f upperPos;
-        float width; //HitBox
-        float height;
-    };
-
-    class RotationComp {
-        float pitch;
-        float yaw;
-        float pitchFake;
-        float yawFake;
-    };
+//Funtion Flag
+std::atomic<bool> isFlying(false);
 
 
-#define LOG_DEBUG(...)  ( __android_log_print(ANDROID_LOG_DEBUG, "Koola", __VA_ARGS__));
-    JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
-        JNIEnv* env;
-        if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
-            return JNI_ERR;
-        }
-        return JNI_VERSION_1_6;
+// Hook 函数实现
+static void* my_LocalPlayerOnTick(void* player, void* tick) {
+    localPlayerAddr = reinterpret_cast<uintptr_t>(player);
+    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr);
+    LOG_DEBUG("LocalPlayer: %llx", player);
+    return origLocalPlayerOnTick(player, tick);
+}
+
+
+
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv* env;
+    if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
     }
-
-    static void* (*origLocalPlayerOnTick)(void*, void*); //原函数指针
-    static void* (*origPlayerOnTick)(void*, void*); //原函数指针
-
-    static void* my_LocalPlayerOnTick(void* player,void* tick) {
-        LOG_DEBUG("LocalPlayer: %llx", player);
-
-        if (player == nullptr) {
-            return origLocalPlayerOnTick(player, tick);
-        }
-
-        //Just for test
-        StateVectorComp** stateVectorCompPtr = (StateVectorComp**)((uint64_t)player + 0x318);
-        StateVectorComp* stateVectorComp = *stateVectorCompPtr;
-        if (stateVectorComp == nullptr) {
-            return origLocalPlayerOnTick(player, tick);
-        }
-        //stateVectorComp->velocity.y = 1;
-        //Fly into sky.
+    return JNI_VERSION_1_6;
+}
 
 
-        return origLocalPlayerOnTick(player, tick);
-    }
-    static void* my_PlayerOnTick(void* player, void* tick) {
-        LOG_DEBUG("Player: %llx", player);
-        //stateVectorComp->velocity.y = 1;
-        //Fly into sky.
-        return origPlayerOnTick(player, tick);
-    }
-
-
-
-    extern "C" JNIEXPORT jint JNICALL
-    Java_cn_peyriat_koola_NativeHook_getPlayer(JNIEnv* env, jobject thiz) {
-        minecraftInfo.createInfo("libminecraftpe.so");
-        void *hookPlayer = shadowhook_hook_func_addr(
-                (void*)(minecraftInfo.head + 0x6D14028),
-                (void*)my_PlayerOnTick,
-                (void**)&origPlayerOnTick);
-
-
-        void *hookLocalPlayer = shadowhook_hook_func_addr(
+extern "C"
+JNIEXPORT jint JNICALL
+Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
+    minecraftInfo.createInfo("libminecraftpe.so");
+    void *hookLocalPlayer = shadowhook_hook_func_addr(
             (void*)(minecraftInfo.head + 0x558CFC0),
             (void*)my_LocalPlayerOnTick,
             (void**)&origLocalPlayerOnTick);
-
-        if (hookLocalPlayer == nullptr) {
-            LOG_DEBUG("Hook failed");
-            return -1;
-        }
-        if (hookPlayer == nullptr) {
-            LOG_DEBUG("Hook failed");
-            return -1;
-        }
-        return 0;
+    if (hookLocalPlayer == nullptr) {
+        LOG_DEBUG("Hook failed");
+        return -1;
     }
+    return 0;
+
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_cn_peyriat_koola_NativeHook_flyToSky(JNIEnv* env, jobject thiz, jboolean enable) {
+    if (localPlayerAddr == 0) {
+        LOG_DEBUG("LocalPlayer Address is null");
+        return -1;
+    }
+    // 根据 enable 参数决定是否持续修改 y
+    if (enable) {
+        isFlying.store(true); // 设置飞行状态
+        std::thread([]() { // 嵌套线程进行持续修改
+            while (isFlying.load()) { // 如果标志变量为 true，则持续执行
+                StateVectorComp** stateVectorCompPtr = (StateVectorComp**)((uint64_t)localPlayerAddr + 0x318);
+                if (stateVectorCompPtr) {
+                    StateVectorComp* stateVectorComp = *stateVectorCompPtr;
+                    if (stateVectorComp) {
+                        stateVectorComp->velocity.y = 1; // 持续修改 y
+                        LOG_DEBUG("Setting velocity.y to 1");
+                    }
+                }
+                usleep(100000); // 休息 100 毫秒，防止过于频繁修改
+            }
+        }).detach(); // 分离线程，防止阻塞主线程
+    } else {
+        isFlying.store(false); // 停止飞行状态
+    }
+    return 0;
+}

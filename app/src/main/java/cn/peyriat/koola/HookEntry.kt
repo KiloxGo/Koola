@@ -77,12 +77,9 @@ class HookEntry:IYukiHookXposedInit {
                     after {
                         LogUtils.javaLog(args[1] as String)
                         if (args[1] as String != "minecraftpe") {
+                            NativeHook.initHook()
                             return@after
-                        }
-                        if (NativeHook.getPlayer() == 0) {
-                            LogUtils.javaLog("hook success")
-                        } else {
-                            LogUtils.javaLog("hook failed")
+
                         }
 
                     }
@@ -147,8 +144,8 @@ class HookEntry:IYukiHookXposedInit {
                             val switch1 = android.widget.Switch(activity).apply {
                                 isChecked = false
                                 setOnCheckedChangeListener { _, isChecked ->
-                                    LogUtils.javaLog("开关1状态: $isChecked")
-                                    // 在这里添加功能1的逻辑
+                                    LogUtils.javaLog("FlyToSky: $isChecked")
+                                    NativeHook.flyToSky(isChecked)
                                 }
                             }
                             

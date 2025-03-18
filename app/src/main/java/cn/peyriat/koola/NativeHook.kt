@@ -17,8 +17,13 @@ object NativeHook {
                     .build()
             )
             System.loadLibrary("koola")
+
         }
-    external fun getPlayer():Int
+    external fun initHook():Int
+    //external fun getLocalPlayer(): Int
+    external fun flyToSky(enable: Boolean): Int
+
+
 
 
 }
