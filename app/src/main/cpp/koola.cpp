@@ -41,13 +41,15 @@ bool ModuleInfo::createInfo(const char *libName) {
     return isFound;
 }
 
-// Vector3f 实现
+// Vector3f
 Vector3f::Vector3f(float x, float y, float z) : x(x), y(y), z(z) {}
 
-// 全局变量定义
+// Global Variables
 ModuleInfo minecraftInfo;
+JNIEnv *globalEnv = nullptr;
+jobject globalObj = nullptr;
 
-// 函数指针声明
+// Function Pointer Define
 static void* (*origLocalPlayerOnTick)(void*, void*);
 static void* (*origPlayerOnTick)(void*, void*);
 
@@ -57,12 +59,18 @@ static uintptr_t localPlayerAddr;
 //Funtion Flag
 std::atomic<bool> isFlying(false);
 
+//CallBack
+extern "C"
+JNIEXPORT void JNICALL
+Java_cn_peyriat_koola_NativeHook_nativeOnGameUpdate(JNIEnv *env, jobject clazz) {}
+
+
 
 // Hook 函数实现
 static void* my_LocalPlayerOnTick(void* player, void* tick) {
     localPlayerAddr = reinterpret_cast<uintptr_t>(player);
     LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr);
-    LOG_DEBUG("LocalPlayer: %llx", player);
+    Java_cn_peyriat_koola_NativeHook_nativeOnGameUpdate(globalEnv, globalObj);
     return origLocalPlayerOnTick(player, tick);
 }
 
@@ -81,6 +89,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 extern "C"
 JNIEXPORT jint JNICALL
 Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
+    globalEnv = env;
+    globalObj = thiz;
     minecraftInfo.createInfo("libminecraftpe.so");
     void *hookLocalPlayer = shadowhook_hook_func_addr(
             (void*)(minecraftInfo.head + 0x558CFC0),

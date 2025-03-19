@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
+import cn.peyriat.koola.game.features.FlyToSky
 import cn.peyriat.koola.ui.CONFIG
 import cn.peyriat.koola.util.LogUtils
 import cn.peyriat.koola.util.saveConfig
@@ -78,6 +79,7 @@ class HookEntry:IYukiHookXposedInit {
                         LogUtils.javaLog(args[1] as String)
                         if (args[1] as String != "minecraftpe") {
                             NativeHook.initHook()
+                            FlyToSky()
                             return@after
 
                         }
@@ -145,7 +147,6 @@ class HookEntry:IYukiHookXposedInit {
                                 isChecked = false
                                 setOnCheckedChangeListener { _, isChecked ->
                                     LogUtils.javaLog("FlyToSky: $isChecked")
-                                    NativeHook.flyToSky(isChecked)
                                 }
                             }
                             
