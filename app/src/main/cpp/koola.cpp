@@ -55,22 +55,22 @@ static void* (*origPlayerOnTick)(void*, void*);
 
 //Point Addr Define
 static uintptr_t localPlayerAddr;
+static long localPlayertick;
 
-//Funtion Flag
-std::atomic<bool> isFlying(false);
+//Funtion Flag Define
 
-//CallBack
-extern "C"
-JNIEXPORT void JNICALL
-Java_cn_peyriat_koola_NativeHook_nativeOnGameUpdate(JNIEnv *env, jobject clazz) {}
+//CallEvent
 
 
 
 // Hook 函数实现
 static void* my_LocalPlayerOnTick(void* player, void* tick) {
-    localPlayerAddr = reinterpret_cast<uintptr_t>(player);
+    if (player != nullptr && localPlayerAddr != (uintptr_t)player){
+        localPlayerAddr = reinterpret_cast<uintptr_t>(player);
+    }
+    localPlayertick = reinterpret_cast<long>(tick);
     LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr);
-    Java_cn_peyriat_koola_NativeHook_nativeOnGameUpdate(globalEnv, globalObj);
+
     return origLocalPlayerOnTick(player, tick);
 }
 
@@ -89,45 +89,32 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 extern "C"
 JNIEXPORT jint JNICALL
 Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
-    globalEnv = env;
-    globalObj = thiz;
+
     minecraftInfo.createInfo("libminecraftpe.so");
+
     void *hookLocalPlayer = shadowhook_hook_func_addr(
             (void*)(minecraftInfo.head + 0x558CFC0),
             (void*)my_LocalPlayerOnTick,
             (void**)&origLocalPlayerOnTick);
+
     if (hookLocalPlayer == nullptr) {
         LOG_DEBUG("Hook failed");
         return -1;
     }
+
+
     return 0;
 
 }
 extern "C"
 JNIEXPORT jint JNICALL
-Java_cn_peyriat_koola_NativeHook_flyToSky(JNIEnv* env, jobject thiz, jboolean enable) {
+Java_cn_peyriat_koola_NativeHook_flyToSky(JNIEnv* env, jobject thiz) {
     if (localPlayerAddr == 0) {
         LOG_DEBUG("LocalPlayer Address is null");
         return -1;
     }
-    // 根据 enable 参数决定是否持续修改 y
-    if (enable) {
-        isFlying.store(true); // 设置飞行状态
-        std::thread([]() { // 嵌套线程进行持续修改
-            while (isFlying.load()) { // 如果标志变量为 true，则持续执行
-                StateVectorComp** stateVectorCompPtr = (StateVectorComp**)((uint64_t)localPlayerAddr + 0x318);
-                if (stateVectorCompPtr) {
-                    StateVectorComp* stateVectorComp = *stateVectorCompPtr;
-                    if (stateVectorComp) {
-                        stateVectorComp->velocity.y = 1; // 持续修改 y
-                        LOG_DEBUG("Setting velocity.y to 1");
-                    }
-                }
-                usleep(100000); // 休息 100 毫秒，防止过于频繁修改
-            }
-        }).detach(); // 分离线程，防止阻塞主线程
-    } else {
-        isFlying.store(false); // 停止飞行状态
-    }
+    StateVectorComp** stateVectorCompPtr = (StateVectorComp**)((uint64_t)localPlayerAddr + 0x318);
+    StateVectorComp* stateVectorComp = *stateVectorCompPtr;
+    stateVectorComp->velocity.y = 1;
     return 0;
 }

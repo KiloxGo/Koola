@@ -77,11 +77,8 @@ class HookEntry:IYukiHookXposedInit {
                 }.hook {
                     after {
                         LogUtils.javaLog(args[1] as String)
-                        if (args[1] as String != "minecraftpe") {
+                        if (args[1] as String == "minecraftpe") {
                             NativeHook.initHook()
-                            FlyToSky()
-                            return@after
-
                         }
 
                     }
