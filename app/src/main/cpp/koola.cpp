@@ -51,7 +51,7 @@ jobject globalObj = nullptr;
 
 // Function Pointer Define
 static void* (*origLocalPlayerOnTick)(void*, void*);
-static void* (*origPlayerOnTick)(void*, void*);
+static void* (*origPlayerAttack)(void*, void*, void*);
 
 //Point Addr Define
 static uintptr_t localPlayerAddr;
@@ -69,9 +69,14 @@ static void* my_LocalPlayerOnTick(void* player, void* tick) {
         localPlayerAddr = reinterpret_cast<uintptr_t>(player);
     }
     localPlayertick = reinterpret_cast<long>(tick);
-    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr);
+    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr , "Tick: %ld", localPlayertick);
 
     return origLocalPlayerOnTick(player, tick);
+}
+
+static void* my_PlayerAttack(void* PlayerInventory, void* Actor, void* ActorDamageCause) {
+    LOG_DEBUG("Player Attacked");
+    return origPlayerAttack(PlayerInventory, Actor, ActorDamageCause);
 }
 
 
@@ -97,7 +102,17 @@ Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
             (void*)my_LocalPlayerOnTick,
             (void**)&origLocalPlayerOnTick);
 
+    void *hookPlayerAttack = shadowhook_hook_func_addr(
+            (void*)(minecraftInfo.head + 0x6D0CE6C),
+            (void*)my_PlayerAttack,
+            (void**)&origPlayerAttack);
+
     if (hookLocalPlayer == nullptr) {
+        LOG_DEBUG("Hook failed");
+        return -1;
+    }
+
+    if (hookPlayerAttack == nullptr) {
         LOG_DEBUG("Hook failed");
         return -1;
     }
