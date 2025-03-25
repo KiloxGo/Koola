@@ -4,6 +4,10 @@
 #include <cstring>
 #include <atomic>
 #include <thread>
+#include "shadowhook/include/shadowhook.h"
+#include "dexode/EventBus.hpp"
+#include "dexode/eventbus/Bus.hpp"
+#include "GameEvents.h"
 
 // ModuleInfo 实现
 bool ModuleInfo::createInfo(const char *libName) {
@@ -44,37 +48,46 @@ bool ModuleInfo::createInfo(const char *libName) {
 // Vector3f
 Vector3f::Vector3f(float x, float y, float z) : x(x), y(y), z(z) {}
 
+
 // Global Variables
 ModuleInfo minecraftInfo;
-JNIEnv *globalEnv = nullptr;
-jobject globalObj = nullptr;
+//EventBus things
+dexode::EventBus::Listener listener{bus};
+
+
 
 // Function Pointer Define
-static void* (*origLocalPlayerOnTick)(void*, void*);
+
+static void* (*origLocalPlayerTickWorld)(void*);
 static void* (*origPlayerAttack)(void*, void*, void*);
+static void* (*origActorTick)(void*, void*);
+
 
 //Point Addr Define
-static uintptr_t localPlayerAddr;
-static long localPlayertick;
+static uint64_t localPlayer;
 
-//Funtion Flag Define
 
-//CallEvent
+
 
 
 
 // Hook 函数实现
-static void* my_LocalPlayerOnTick(void* player, void* tick) {
-    if (player != nullptr && localPlayerAddr != (uintptr_t)player){
-        localPlayerAddr = reinterpret_cast<uintptr_t>(player);
+static void* my_LocalPlayerTickWorld(void* player) {
+    if (player != nullptr && localPlayer != reinterpret_cast<uint64_t>(player)) {
+        localPlayer = reinterpret_cast<uint64_t>(player);
     }
-    localPlayertick = reinterpret_cast<long>(tick);
-    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayerAddr , "Tick: %ld", localPlayertick);
+    bus->postpone(event::GameUpdate{});
+    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayer);
+    return origLocalPlayerTickWorld(player);
+}
 
-    return origLocalPlayerOnTick(player, tick);
+static void* my_ActorTick(void* actor, void* BlockSourceFromMainChunkSource) {
+    LOG_DEBUG("Actor Address: %llx ", actor);
+    return origActorTick(actor, BlockSourceFromMainChunkSource);
 }
 
 static void* my_PlayerAttack(void* PlayerInventory, void* Actor, void* ActorDamageCause) {
+    LOG_DEBUG("PlayerInventory Address: %llx ", PlayerInventory);
     LOG_DEBUG("Player Attacked");
     return origPlayerAttack(PlayerInventory, Actor, ActorDamageCause);
 }
@@ -83,6 +96,7 @@ static void* my_PlayerAttack(void* PlayerInventory, void* Actor, void* ActorDama
 
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+    shadowhook_init(SHADOWHOOK_MODE_UNIQUE, true);
     JNIEnv* env;
     if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
@@ -91,45 +105,53 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 }
 
 
+
 extern "C"
 JNIEXPORT jint JNICALL
 Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
 
+
     minecraftInfo.createInfo("libminecraftpe.so");
 
-    void *hookLocalPlayer = shadowhook_hook_func_addr(
+    void *hookLocalPlayerTickWorld = shadowhook_hook_func_addr(
             (void*)(minecraftInfo.head + 0x558CFC0),
-            (void*)my_LocalPlayerOnTick,
-            (void**)&origLocalPlayerOnTick);
+            (void*) my_LocalPlayerTickWorld,
+            (void**)&origLocalPlayerTickWorld);
+
+
+    void *hookActorTick = shadowhook_hook_func_addr(
+            (void*)(minecraftInfo.head + 0x725DA34),
+            (void*) my_ActorTick,
+            (void**)&origActorTick);
 
     void *hookPlayerAttack = shadowhook_hook_func_addr(
             (void*)(minecraftInfo.head + 0x6D0CE6C),
             (void*)my_PlayerAttack,
             (void**)&origPlayerAttack);
 
-    if (hookLocalPlayer == nullptr) {
-        LOG_DEBUG("Hook failed");
+
+
+    if (hookLocalPlayerTickWorld == nullptr) {
+        LOG_DEBUG("hookLocalPlayerTickWorld failed");
+        return -1;
+    }
+    if (hookActorTick == nullptr) {
+        LOG_DEBUG("hookActorTick failed");
         return -1;
     }
 
     if (hookPlayerAttack == nullptr) {
-        LOG_DEBUG("Hook failed");
+        LOG_DEBUG("hookPlayerAttack failed");
         return -1;
     }
-
 
     return 0;
 
 }
-extern "C"
-JNIEXPORT jint JNICALL
-Java_cn_peyriat_koola_NativeHook_flyToSky(JNIEnv* env, jobject thiz) {
-    if (localPlayerAddr == 0) {
-        LOG_DEBUG("LocalPlayer Address is null");
-        return -1;
-    }
-    StateVectorComp** stateVectorCompPtr = (StateVectorComp**)((uint64_t)localPlayerAddr + 0x318);
-    StateVectorComp* stateVectorComp = *stateVectorCompPtr;
-    stateVectorComp->velocity.y = 1;
-    return 0;
-}
+
+
+
+
+
+
+

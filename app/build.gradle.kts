@@ -23,7 +23,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
-            abiFilters += listOf("armeabi-v7a","arm64-v8a")
+            abiFilters += "arm64-v8a"
         }
 
         externalNativeBuild {
@@ -38,10 +38,16 @@ android {
 
 
     buildTypes {
-        release {
+        debug {
+            applicationIdSuffix = ".debug"
             isMinifyEnabled = false
             isShrinkResources = false
-            //proguardFiles("proguard-rules.pro")
+            //signingConfig = signingConfigs["debug"]
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs["debug"]
         }
     }
@@ -49,10 +55,6 @@ android {
         resources {
             merges += "META-INF/yukihookapi_init"
             excludes += "**"
-        }
-        jniLibs {
-            "**/libshadowhook.so"
-            "**/libshadowhook_nothing.so"
         }
     }
 
@@ -66,7 +68,6 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
-        prefab = true
     }
     externalNativeBuild {
         cmake {
@@ -82,7 +83,7 @@ dependencies {
     compileOnly(libs.xposed.api)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.common)
-    implementation(libs.shadowhook)
+    //implementation(libs.shadowhook)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

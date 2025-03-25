@@ -1,12 +1,12 @@
-// File: koola.h
 #ifndef KOOLA_H
 #define KOOLA_H
 
 #include <jni.h>
 #include <cstdint>
 #include <string>
-#include <shadowhook.h>
+
 #include <android/log.h>
+#include "dexode/EventBus.hpp"
 
 class ModuleInfo {
 public:
@@ -14,6 +14,7 @@ public:
     uint64_t end;
     bool createInfo(const char* libName);
 };
+auto bus= std::make_shared<dexode::EventBus>();
 
 class Vector3f {
 public:
@@ -45,6 +46,7 @@ public:
     float pitchFake;
     float yawFake;
 };
+
 
 #define LOG_DEBUG(...)  ( __android_log_print(ANDROID_LOG_DEBUG, "Koola", __VA_ARGS__))
 
