@@ -11,7 +11,6 @@ import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
 import cn.peyriat.koola.NativeHook
-import cn.peyriat.koola.game.features.FlyToSky
 import cn.peyriat.koola.util.LogUtils
 
 class FloatingWindow(private val activity: Activity) {
@@ -57,6 +56,7 @@ class FloatingWindow(private val activity: Activity) {
         addView(createTitleView())
         addView(createSwitchRow("Fly2Sky") { isChecked ->
             LogUtils.javaLog("功能2状态: $isChecked")
+            NativeHook.flytosky(isChecked)
 
         })
         addView(createSwitchRow("功能2") { isChecked ->

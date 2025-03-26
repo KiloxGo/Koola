@@ -14,7 +14,7 @@ public:
     uint64_t end;
     bool createInfo(const char* libName);
 };
-auto bus= std::make_shared<dexode::EventBus>();
+
 
 class Vector3f {
 public:

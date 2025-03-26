@@ -6,8 +6,8 @@
 #include <thread>
 #include "shadowhook/include/shadowhook.h"
 #include "dexode/EventBus.hpp"
-#include "dexode/eventbus/Bus.hpp"
 #include "GameEvents.h"
+#include "Features.cpp"
 
 // ModuleInfo 实现
 bool ModuleInfo::createInfo(const char *libName) {
@@ -51,8 +51,10 @@ Vector3f::Vector3f(float x, float y, float z) : x(x), y(y), z(z) {}
 
 // Global Variables
 ModuleInfo minecraftInfo;
-//EventBus things
-dexode::EventBus::Listener listener{bus};
+
+//bus
+auto bus = std::make_shared<dexode::EventBus>(); //so we need share this to Features.. maybe need to use initbus?
+
 
 
 
@@ -62,6 +64,8 @@ static void* (*origLocalPlayerTickWorld)(void*);
 static void* (*origPlayerAttack)(void*, void*, void*);
 static void* (*origActorTick)(void*, void*);
 
+
+void initEventBus();
 
 //Point Addr Define
 static uint64_t localPlayer;
@@ -76,8 +80,9 @@ static void* my_LocalPlayerTickWorld(void* player) {
     if (player != nullptr && localPlayer != reinterpret_cast<uint64_t>(player)) {
         localPlayer = reinterpret_cast<uint64_t>(player);
     }
+    LOG_DEBUG("LocalPlayer Address: %lx ", localPlayer);
     bus->postpone(event::GameUpdate{});
-    LOG_DEBUG("LocalPlayer Address: %llx ", localPlayer);
+    bus->process();
     return origLocalPlayerTickWorld(player);
 }
 
@@ -109,7 +114,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 extern "C"
 JNIEXPORT jint JNICALL
 Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
-
+    initEventBus();
 
     minecraftInfo.createInfo("libminecraftpe.so");
 
@@ -149,9 +154,24 @@ Java_cn_peyriat_koola_NativeHook_initHook(JNIEnv *env, jobject thiz) {
 
 }
 
+void initEventBus() {
+
+}
 
 
 
 
 
 
+extern "C"
+JNIEXPORT jint JNICALL
+Java_cn_peyriat_koola_NativeHook_flytosky(JNIEnv *env, jobject thiz,jboolean state) {
+    if (state) {
+        Module::FlyToSky::setSpeed(0.1f);
+        Module::FlyToSky::enable();
+        LOG_DEBUG("FlyToSky enabled");
+    } else {
+        Module::FlyToSky::disable();
+    }
+    return 0;
+}

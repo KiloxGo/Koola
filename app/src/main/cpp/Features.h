@@ -1,22 +1,23 @@
-//
-// Created by Laptop on 2025/3/25.
-//
+// Features.h
+#ifndef FEATURES_H
+#define FEATURES_H
 
-#ifndef KOOLA_FEATURES_H
-#define KOOLA_FEATURES_H
+#include "dexode/eventbus/Bus.hpp"
+#include "GameEvents.h"
 
 namespace Module {
 
     class FlyToSky {
-        int speed = 0;
+        static float speed;
+        static dexode::EventBus::Listener _listener;
     public:
-        void enable();
-        void disable();
-        bool isEnabled();
-
+        static void setSpeed(float speed);
+        static void enable();
+        static void disable();
+    private:
+        static void onUpdate();
     };
 
+}
 
-} // Module
-
-#endif //KOOLA_FEATURES_H
+#endif  // FEATURES_H

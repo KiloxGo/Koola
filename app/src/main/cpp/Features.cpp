@@ -1,31 +1,37 @@
-//
-// Created by Laptop on 2025/3/25.
-//
-#include "koola.h"
 #include "Features.h"
-#include "dexode/eventbus/Bus.hpp"
-#include "GameEvents.h"
-
+#include "koola.h"
 
 namespace Module {
-    dexode::EventBus::Listener listener{bus};
-    void FlyToSky::enable() {
-        listener.listen([](const event::GameUpdate& event) // listen with lambda
-                        {
-                            ANDROID_LOG_DEBUG"I received gold: " << event.goldReceived << " 💰" << std::endl;
-                        });
-        speed = 100;
 
+
+    float FlyToSky::speed = 0.0f;
+    dexode::EventBus::Listener FlyToSky::_listener;
+
+    void FlyToSky::setSpeed(float newSpeed) {
+        FlyToSky::speed = newSpeed;
     }
+
+    void FlyToSky::enable() {
+        LOG_DEBUG("enable fly to sky");
+        if (!bus) {
+            LOG_DEBUG("EventBus is not initialized!");
+            return;
+        }
+        if (!_listener.isListening<event::GameUpdate>()) {
+            LOG_DEBUG("Listener is not listening to GameUpdate event!");
+        }
+        _listener.listen<event::GameUpdate>(
+                std::bind(&FlyToSky::onUpdate)
+        );
+    }
+
 
     void FlyToSky::disable() {
-
+        _listener.unlisten<event::GameUpdate>();
     }
 
-    bool FlyToSky::isEnabled() {
-
-        return false; // Placeholder return value
+    void FlyToSky::onUpdate() {
+        LOG_DEBUG("received event");
     }
 
-
-} // Module
+}

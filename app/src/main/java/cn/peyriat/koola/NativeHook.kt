@@ -8,7 +8,7 @@ object NativeHook {
         }
     external fun initHook():Int
 
-    external fun flyToSky():Int
+    external fun flytosky(state: Boolean):Int
 
 
 
